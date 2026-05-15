@@ -1,21 +1,36 @@
 const express = require("express");
 const cors = require("cors");
-const Database = require("better-sqlite3");
-const path = require("path");
-
+const initSqlJs = require("sql.js");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = new Database(path.join(__dirname, "analytics.db"));
-db.pragma("journal_mode = WAL");
-db.exec(fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8"));
+const DB_PATH = path.join(__dirname, "analytics.db");
+let db;
+
+async function initDb() {
+  const SQL = await initSqlJs();
+  if (fs.existsSync(DB_PATH)) {
+    db = new SQL.Database(fs.readFileSync(DB_PATH));
+  } else {
+    db = new SQL.Database();
+  }
+  const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
+  db.run(schema);
+  save();
+}
+
+function save() {
+  fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
+}
 
 app.post("/track", (req, res) => {
   const { event, action, url } = req.body;
-  db.prepare("INSERT INTO events (event, action, url) VALUES (?, ?, ?)").run(event, action || null, url || null);
+  db.run("INSERT INTO events (event, action, url) VALUES (?, ?, ?)", [event, action || null, url || null]);
+  save();
   res.json({ ok: true });
 });
 
@@ -23,19 +38,38 @@ app.post("/signup", (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "email required" });
   try {
-    db.prepare("INSERT OR IGNORE INTO signups (email) VALUES (?)").run(email);
-    res.json({ ok: true });
-  } catch (e) {
-    res.json({ ok: true });
-  }
+    db.run("INSERT OR IGNORE INTO signups (email) VALUES (?)", [email]);
+    save();
+  } catch (e) {}
+  res.json({ ok: true });
+});
+
+app.get("/list", (req, res) => {
+  const events = db.exec("SELECT * FROM events ORDER BY id DESC");
+  const signups = db.exec("SELECT * FROM signups ORDER BY id DESC");
+  const toObjects = (result) => {
+    if (!result.length) return [];
+    const { columns, values } = result[0];
+    return values.map(row => Object.fromEntries(columns.map((c, i) => [c, row[i]])));
+  };
+  res.json({ events: toObjects(events), signups: toObjects(signups) });
 });
 
 app.get("/stats", (req, res) => {
-  const views = db.prepare("SELECT COUNT(*) as c FROM events WHERE event = 'page_view'").get().c;
-  const clicks = db.prepare("SELECT action, COUNT(*) as c FROM events WHERE event = 'click' GROUP BY action").all();
-  const signups = db.prepare("SELECT COUNT(*) as c FROM signups").get().c;
-  res.json({ views, clicks, signups });
+  const views = db.exec("SELECT COUNT(*) as c FROM events WHERE event = 'page_view'");
+  const clicks = db.exec("SELECT action, COUNT(*) as c FROM events WHERE event = 'click' GROUP BY action");
+  const signups = db.exec("SELECT COUNT(*) as c FROM signups");
+  const toObjects = (result) => {
+    if (!result.length) return [];
+    const { columns, values } = result[0];
+    return values.map(row => Object.fromEntries(columns.map((c, i) => [c, row[i]])));
+  };
+  res.json({
+    views: views.length ? views[0].values[0][0] : 0,
+    clicks: toObjects(clicks),
+    signups: signups.length ? signups[0].values[0][0] : 0
+  });
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+initDb().then(() => app.listen(PORT, () => console.log(`API running on port ${PORT}`)));
