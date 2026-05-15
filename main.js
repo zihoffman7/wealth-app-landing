@@ -1,4 +1,4 @@
-const API_BASE = "https://wealth-landing-api.onrender.com";
+const API_BASE = "https://wealth-app-landing.onrender.com";
 
 function scrollToSignup() {
   document.getElementById("signup").scrollIntoView({ behavior: "smooth" });
