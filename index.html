@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wealth — Fitness That Sticks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo">Wealth</div>
+  <button class="nav-cta" onclick="trackClick('nav_cta'); scrollToSignup()">Get Early Access</button>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">Social Fitness Platform</div>
+  <h1>Staying Fit Alone is <span>Impossible.</span> We Fixed That.</h1>
+  <p>Most people quit within weeks because they have zero accountability. Wealth turns fitness into a social experience with friends, leagues, and streaks that make giving up harder than showing up.</p>
+  <div class="cta-group">
+    <button class="btn-primary" onclick="trackClick('hero_cta'); scrollToSignup()">Join the Waitlist</button>
+    <button class="btn-secondary" onclick="trackClick('learn_more'); document.getElementById('problem').scrollIntoView({behavior:'smooth'})">Learn More</button>
+  </div>
+  <div class="phone-row">
+    <div class="phone-mock"><img src="images/competitions.png" alt="Competitions"></div>
+    <div class="phone-mock center"><img src="images/home-feed.png" alt="Social Feed"></div>
+    <div class="phone-mock"><img src="images/challenges.png" alt="Challenges"></div>
+  </div>
+</section>
+
+<section class="section" id="problem">
+  <div class="section-label">The Problem</div>
+  <h2>Your Willpower Fades. Your Friends Won't.</h2>
+  <p class="subtitle">Health goals are long-term, but temptations are immediate. Without social friction to keep you going, motivation vanishes when life gets busy.</p>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="problem-icon">1</div>
+      <h3>Guilt & Shame Spiral</h3>
+      <p>Missed a workout? Most apps just show you a broken streak. That shame makes you avoid the app entirely — the opposite of helpful.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">2</div>
+      <h3>Apps Track, They Don't Motivate</h3>
+      <p>MyFitnessPal and generic trackers collect data passively. They record failure but never prevent it. You need people, not pie charts.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">3</div>
+      <h3>Trainers Are Too Expensive</h3>
+      <p>Personal accountability costs $50+/session. Friends are free but too polite to push you. You need something in between.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="section-label">The Solution</div>
+  <h2>Social Accountability That Actually Works</h2>
+  <p class="subtitle">Wealth combines the power of community, friendly competition, and daily social engagement to make fitness a habit you can't break.</p>
+
+  <div class="features-grid" style="margin-bottom:60px;">
+    <div class="feature-text">
+      <h3>Friend Leagues & Competitions</h3>
+      <p>Compete against friends in weekly step-offs and workout challenges. Leaderboards, badges, and bragging rights keep everyone showing up.</p>
+    </div>
+    <div class="feature-img"><img src="images/competitions.png" alt="Friend Leagues"></div>
+  </div>
+
+  <div class="features-grid" style="margin-bottom:60px; direction:rtl;">
+    <div class="feature-text" style="direction:ltr;">
+      <h3>Share Your Wins</h3>
+      <p>Post workout snaps, meals, and milestones to your feed. Get cheers from your community, not silence from a spreadsheet.</p>
+    </div>
+    <div class="feature-img" style="direction:ltr;"><img src="images/home-feed.png" alt="Social Feed"></div>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-text">
+      <h3>Team Challenges & Global Missions</h3>
+      <p>Join squad-based challenges with real deadlines. When your team counts on you, skipping a day isn't an option.</p>
+    </div>
+    <div class="feature-img"><img src="images/challenges.png" alt="Team Challenges"></div>
+  </div>
+</section>
+
+<section class="final-cta" id="signup">
+  <h2>Stop Tracking Failure. Start Building Momentum.</h2>
+  <p>Be the first to experience fitness that's actually social. Join the waitlist — it's free.</p>
+  <form class="email-form" onsubmit="handleSubmit(event)">
+    <input type="email" id="email" placeholder="Enter your email" required>
+    <button type="submit" class="btn-primary">Get Early Access</button>
+  </form>
+  <p id="form-msg" style="margin-top:16px; font-size:14px; color:var(--primary-container);"></p>
+</section>
+
+<footer>
+  <p>&copy; 2026 Wealth. All rights reserved.</p>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
