@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS events (
   event TEXT NOT NULL,
   action TEXT,
   url TEXT,
+  ip TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 

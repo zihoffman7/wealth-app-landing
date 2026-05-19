@@ -18,6 +18,7 @@ async function initDb() {
       event TEXT NOT NULL,
       action TEXT,
       url TEXT,
+      ip TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS signups (
@@ -30,9 +31,10 @@ async function initDb() {
 
 app.post("/track", async (req, res) => {
   const { event, action, url } = req.body;
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
   await db.execute({
-    sql: "INSERT INTO events (event, action, url) VALUES (?, ?, ?)",
-    args: [event, action || null, url || null],
+    sql: "INSERT INTO events (event, action, url, ip) VALUES (?, ?, ?, ?)",
+    args: [event, action || null, url || null, ip || null],
   });
   res.json({ ok: true });
 });
@@ -58,14 +60,16 @@ app.get("/list", async (req, res) => {
 });
 
 app.get("/stats", async (req, res) => {
-  const [views, clicks, signups] = await Promise.all([
+  const [views, clicks, signups, clicksByIp] = await Promise.all([
     db.execute("SELECT COUNT(*) as c FROM events WHERE event = 'page_view'"),
     db.execute("SELECT action, COUNT(*) as c FROM events WHERE event = 'click' GROUP BY action"),
     db.execute("SELECT COUNT(*) as c FROM signups"),
+    db.execute("SELECT ip, COUNT(*) as c FROM events WHERE event = 'click' GROUP BY ip ORDER BY c DESC"),
   ]);
   res.json({
     views: views.rows[0].c,
     clicks: clicks.rows,
+    clicks_by_ip: clicksByIp.rows,
     signups: signups.rows[0].c,
   });
 });
