@@ -1,73 +1,72 @@
 const express = require("express");
 const cors = require("cors");
-const initSqlJs = require("sql.js");
-const fs = require("fs");
-const path = require("path");
+const { createClient } = require("@libsql/client");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const DB_PATH = path.join(__dirname, "analytics.db");
-let db;
+const db = createClient({
+  url: process.env.TURSO_URL,
+  authToken: process.env.TURSO_TOKEN,
+});
 
 async function initDb() {
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    db = new SQL.Database(fs.readFileSync(DB_PATH));
-  } else {
-    db = new SQL.Database();
-  }
-  const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
-  db.run(schema);
-  save();
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event TEXT NOT NULL,
+      action TEXT,
+      url TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS signups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
 }
 
-function save() {
-  fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
-}
-
-app.post("/track", (req, res) => {
+app.post("/track", async (req, res) => {
   const { event, action, url } = req.body;
-  db.run("INSERT INTO events (event, action, url) VALUES (?, ?, ?)", [event, action || null, url || null]);
-  save();
+  await db.execute({
+    sql: "INSERT INTO events (event, action, url) VALUES (?, ?, ?)",
+    args: [event, action || null, url || null],
+  });
   res.json({ ok: true });
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "email required" });
-  try {
-    db.run("INSERT OR IGNORE INTO signups (email) VALUES (?)", [email]);
-    save();
-  } catch (e) {}
+  await db.execute({ sql: "INSERT OR IGNORE INTO signups (email) VALUES (?)", args: [email] });
   res.json({ ok: true });
 });
 
-app.get("/list", (req, res) => {
-  const events = db.exec("SELECT * FROM events ORDER BY id DESC");
-  const signups = db.exec("SELECT * FROM signups ORDER BY id DESC");
-  const toObjects = (result) => {
-    if (!result.length) return [];
-    const { columns, values } = result[0];
-    return values.map(row => Object.fromEntries(columns.map((c, i) => [c, row[i]])));
-  };
-  res.json({ events: toObjects(events), signups: toObjects(signups) });
+app.post("/clear", async (req, res) => {
+  await db.executeMultiple("DELETE FROM events; DELETE FROM signups;");
+  res.json({ ok: true });
 });
 
-app.get("/stats", (req, res) => {
-  const views = db.exec("SELECT COUNT(*) as c FROM events WHERE event = 'page_view'");
-  const clicks = db.exec("SELECT action, COUNT(*) as c FROM events WHERE event = 'click' GROUP BY action");
-  const signups = db.exec("SELECT COUNT(*) as c FROM signups");
-  const toObjects = (result) => {
-    if (!result.length) return [];
-    const { columns, values } = result[0];
-    return values.map(row => Object.fromEntries(columns.map((c, i) => [c, row[i]])));
-  };
+app.get("/list", async (req, res) => {
+  const [events, signups] = await Promise.all([
+    db.execute("SELECT * FROM events ORDER BY id DESC"),
+    db.execute("SELECT * FROM signups ORDER BY id DESC"),
+  ]);
+  res.json({ events: events.rows, signups: signups.rows });
+});
+
+app.get("/stats", async (req, res) => {
+  const [views, clicks, signups] = await Promise.all([
+    db.execute("SELECT COUNT(*) as c FROM events WHERE event = 'page_view'"),
+    db.execute("SELECT action, COUNT(*) as c FROM events WHERE event = 'click' GROUP BY action"),
+    db.execute("SELECT COUNT(*) as c FROM signups"),
+  ]);
   res.json({
-    views: views.length ? views[0].values[0][0] : 0,
-    clicks: toObjects(clicks),
-    signups: signups.length ? signups[0].values[0][0] : 0
+    views: views.rows[0].c,
+    clicks: clicks.rows,
+    signups: signups.rows[0].c,
   });
 });
 
