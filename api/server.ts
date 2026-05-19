@@ -1,40 +1,29 @@
-const express = require("express");
-const cors = require("cors");
-const { createClient } = require("@libsql/client");
+import express from "express";
+import cors from "cors";
+import { createClient } from "@libsql/client";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const db = createClient({
-  url: process.env.TURSO_URL,
+  url: process.env.TURSO_URL!,
   authToken: process.env.TURSO_TOKEN,
 });
 
 async function initDb() {
-  await db.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      event TEXT NOT NULL,
-      action TEXT,
-      url TEXT,
-      ip TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-    CREATE TABLE IF NOT EXISTS signups (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
+  const schema = readFileSync(join(__dirname, "schema.sql"), "utf8");
+  await db.executeMultiple(schema);
 }
 
 app.post("/track", async (req, res) => {
   const { event, action, url } = req.body;
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
+  const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() || req.socket.remoteAddress;
   await db.execute({
     sql: "INSERT INTO events (event, action, url, ip) VALUES (?, ?, ?, ?)",
-    args: [event, action || null, url || null, ip || null],
+    args: [event, action ?? null, url ?? null, ip ?? null],
   });
   res.json({ ok: true });
 });
