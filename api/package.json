@@ -7,6 +7,6 @@
   "dependencies": {
     "express": "4.18.2",
     "cors": "2.8.5",
-    "sql.js": "1.10.3"
+    "@libsql/client": "0.14.0"
   }
 }
