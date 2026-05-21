@@ -16,6 +16,8 @@ const db = createClient({
 async function initDb() {
   const schema = readFileSync(join(__dirname, "schema.sql"), "utf8");
   await db.executeMultiple(schema);
+  // Safe migration: add note column if it doesn't exist yet
+  await db.execute("ALTER TABLE signups ADD COLUMN note TEXT").catch(() => {});
 }
 
 app.post("/track", async (req, res) => {
@@ -29,9 +31,9 @@ app.post("/track", async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-  const { email } = req.body;
+  const { email, note } = req.body;
   if (!email) return res.status(400).json({ error: "email required" });
-  await db.execute({ sql: "INSERT OR IGNORE INTO signups (email) VALUES (?)", args: [email] });
+  await db.execute({ sql: "INSERT OR IGNORE INTO signups (email, note) VALUES (?, ?)", args: [email, note ?? null] });
   res.json({ ok: true });
 });
 

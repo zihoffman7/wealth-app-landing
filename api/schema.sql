@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS signups (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT UNIQUE NOT NULL,
+  note TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );

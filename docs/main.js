@@ -15,15 +15,17 @@ function trackClick(action) {
 function handleSubmit(e) {
   e.preventDefault();
   const email = document.getElementById("email").value;
+  const note = document.getElementById("note").value.trim() || null;
   fetch(API_BASE + "/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email })
+    body: JSON.stringify({ email, note })
   })
   .then(r => r.json())
   .then(() => {
     document.getElementById("form-msg").textContent = "You're on the list! We'll be in touch.";
     document.getElementById("email").value = "";
+    document.getElementById("note").value = "";
     trackClick("email_signup");
   })
   .catch(() => {

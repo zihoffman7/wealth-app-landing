@@ -118,14 +118,23 @@ nav {
 .final-cta p { font-size: 18px; color: var(--on-surface-variant); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; }
 
 .email-form {
-  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 12px; max-width: 480px; margin: 0 auto;
 }
-.email-form input {
-  flex: 1; min-width: 220px; padding: 16px 20px; border-radius: 9999px;
+.email-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.email-form input, .email-form textarea {
+  padding: 16px 20px;
   border: 2px solid #e2e7ff; font-size: 16px; font-family: inherit;
   outline: none; transition: border-color 0.2s;
 }
-.email-form input:focus { border-color: var(--primary-container); }
+.email-form input {
+  flex: 1; min-width: 220px; border-radius: 9999px;
+}
+.email-form textarea {
+  width: 100%; border-radius: 16px; resize: vertical; min-height: 80px;
+}
+.email-form input:focus, .email-form textarea:focus { border-color: var(--primary-container); }
 
 footer { text-align: center; padding: 40px 24px; color: var(--outline); font-size: 14px; }
 
