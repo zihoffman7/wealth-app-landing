@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; }
+  h1 { padding: 20px 24px 0; font-size: 1.4rem; color: #fff; }
+  .subtitle { padding: 4px 24px 16px; font-size: 0.85rem; color: #64748b; }
+  .stats { display: flex; gap: 12px; padding: 0 24px 20px; flex-wrap: wrap; }
+  .stat { background: #1e2130; border-radius: 10px; padding: 14px 20px; flex: 1; min-width: 120px; }
+  .stat .val { font-size: 1.8rem; font-weight: 700; color: #7c3aed; }
+  .stat .lbl { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px 24px; }
+  .card { background: #1e2130; border-radius: 10px; padding: 16px; }
+  .card h2 { font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  #map { height: 340px; border-radius: 8px; }
+  canvas { max-height: 260px; }
+  @media(max-width:700px){ .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<h1>Wealth App Landing — Analytics</h1>
+<p class="subtitle">Event data · May 21–27, 2026</p>
+
+<div class="stats">
+  <div class="stat"><div class="val" id="s-total"></div><div class="lbl">Total Events</div></div>
+  <div class="stat"><div class="val" id="s-views"></div><div class="lbl">Page Views</div></div>
+  <div class="stat"><div class="val" id="s-clicks"></div><div class="lbl">Clicks</div></div>
+  <div class="stat"><div class="val" id="s-ips"></div><div class="lbl">Unique IPs <span title="Many IPs share the same /24 network (e.g. campus WiFi), so this overcounts distinct visitors." style="cursor:help;color:#f59e0b">⚠</span></div></div>
+  <div class="stat"><div class="val" id="s-signups"></div><div class="lbl">Email Signups</div></div>
+</div>
+
+<div class="grid">
+  <div class="card" style="grid-column:1/-1"><h2>Visitor Locations</h2><div id="map"></div></div>
+  <div class="card"><h2>Events by Type</h2><canvas id="c-events"></canvas></div>
+  <div class="card"><h2>Click Actions</h2><canvas id="c-actions"></canvas></div>
+  <div class="card"><h2>Events Over Time</h2><canvas id="c-time"></canvas></div>
+  <div class="card"><h2>Events by City</h2><canvas id="c-city"></canvas></div>
+</div>
+
+<script>
+const events = [{"id":113,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-27 02:31:30","ip":"174.239.181.190"},{"id":112,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-27 02:31:22","ip":"174.239.181.190"},{"id":111,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-27 02:30:58","ip":"174.239.181.190"},{"id":110,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-27 02:26:19","ip":"71.93.36.70"},{"id":109,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-26 20:42:34","ip":"129.65.145.229"},{"id":108,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-26 19:45:23","ip":"129.65.145.194"},{"id":107,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 22:13:50","ip":"129.65.145.66"},{"id":106,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 22:13:18","ip":"129.65.145.66"},{"id":105,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 22:13:17","ip":"129.65.145.66"},{"id":104,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 22:13:02","ip":"129.65.145.66"},{"id":103,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 21:02:26","ip":"174.227.172.57"},{"id":102,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 21:02:22","ip":"174.227.172.57"},{"id":101,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 21:02:17","ip":"174.227.172.57"},{"id":100,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:56:07","ip":"104.34.6.235"},{"id":99,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 20:55:48","ip":"104.34.6.235"},{"id":98,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:55:42","ip":"104.34.6.235"},{"id":97,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:45:38","ip":"129.65.145.50"},{"id":96,"event":"click","action":"learn_more","url":null,"created_at":"2026-05-21 20:45:03","ip":"129.65.145.50"},{"id":95,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:44:59","ip":"129.65.145.50"},{"id":94,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:41:20","ip":"129.65.145.50"},{"id":93,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:40:45","ip":"129.65.145.50"},{"id":92,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:40:41","ip":"129.65.145.50"},{"id":91,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:40:19","ip":"129.65.145.50"},{"id":90,"event":"click","action":"nav_cta","url":null,"created_at":"2026-05-21 20:39:18","ip":"129.65.145.24"},{"id":89,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:39:11","ip":"129.65.145.24"},{"id":88,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:38:59","ip":"129.65.145.24"},{"id":87,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 20:38:02","ip":"146.75.146.74"},{"id":86,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:37:59","ip":"146.75.146.74"},{"id":85,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:37:47","ip":"146.75.146.75"},{"id":84,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:37:47","ip":"146.75.146.75"},{"id":83,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:37:26","ip":"146.75.146.75"},{"id":82,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 20:35:25","ip":"174.221.160.139"},{"id":81,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:35:22","ip":"174.221.160.139"},{"id":80,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:35:12","ip":"174.249.148.248"},{"id":79,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:34:54","ip":"129.65.145.24"},{"id":78,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:34:38","ip":"129.65.145.100"},{"id":77,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:34:37","ip":"129.65.145.100"},{"id":76,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:34:34","ip":"129.65.145.24"},{"id":75,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:34:22","ip":"129.65.145.24"},{"id":74,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:34:18","ip":"129.65.145.100"},{"id":73,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:33:54","ip":"129.65.145.24"},{"id":72,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:33:28","ip":"129.65.145.24"},{"id":71,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:33:27","ip":"129.65.145.24"},{"id":70,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:33:24","ip":"129.65.145.24"},{"id":69,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:33:23","ip":"129.65.145.24"},{"id":68,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:33:20","ip":"129.65.145.24"},{"id":67,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:33:04","ip":"129.65.145.24"},{"id":66,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:32:53","ip":"129.65.145.24"},{"id":65,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:32:16","ip":"129.65.145.100"},{"id":64,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:32:04","ip":"174.249.148.248"},{"id":63,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:31:46","ip":"174.249.148.248"},{"id":62,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:31:22","ip":"174.249.148.248"},{"id":61,"event":"page_view","action":null,"url":"file:///Users/zih/Documents/GitHub/wealth-app-landing/docs/index.html","created_at":"2026-05-21 20:30:49","ip":"129.65.145.24"},{"id":60,"event":"page_view","action":null,"url":"file:///Users/zih/Documents/GitHub/wealth-app-landing/docs/index.html","created_at":"2026-05-21 20:30:09","ip":"129.65.145.24"},{"id":59,"event":"page_view","action":null,"url":"file:///Users/zih/Documents/GitHub/wealth-app-landing/docs/index.html","created_at":"2026-05-21 20:29:45","ip":"129.65.145.24"},{"id":58,"event":"page_view","action":null,"url":"file:///Users/zih/Documents/GitHub/wealth-app-landing/docs/index.html","created_at":"2026-05-21 20:29:12","ip":"129.65.145.24"},{"id":57,"event":"page_view","action":null,"url":"file:///Users/zih/Documents/GitHub/wealth-app-landing/docs/index.html","created_at":"2026-05-21 20:28:14","ip":"129.65.145.24"},{"id":56,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:27:17","ip":"129.65.145.100"},{"id":55,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:24:18","ip":"129.65.145.206"},{"id":54,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:24:13","ip":"129.65.145.206"},{"id":53,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:22:06","ip":"129.65.145.229"},{"id":52,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:20:04","ip":"174.255.218.61"},{"id":51,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:19:59","ip":"172.226.186.63"},{"id":50,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:19:57","ip":"70.167.159.212"},{"id":49,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:19:10","ip":"129.65.145.100"},{"id":48,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:17:41","ip":"129.65.145.100"},{"id":47,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:17:35","ip":"129.65.145.100"},{"id":46,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:17:28","ip":"174.194.200.246"},{"id":45,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 20:17:18","ip":"174.194.200.246"},{"id":44,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:16:56","ip":"129.65.145.61"},{"id":43,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:16:53","ip":"129.65.145.100"},{"id":42,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:15:56","ip":"129.65.145.100"},{"id":41,"event":"click","action":"nav_cta","url":null,"created_at":"2026-05-21 20:14:49","ip":"185.104.139.135"},{"id":40,"event":"click","action":"learn_more","url":null,"created_at":"2026-05-21 20:13:40","ip":"185.104.139.135"},{"id":39,"event":"click","action":"email_signup","url":null,"created_at":"2026-05-21 20:13:33","ip":"185.104.139.135"},{"id":38,"event":"click","action":"hero_cta","url":null,"created_at":"2026-05-21 20:13:25","ip":"185.104.139.135"},{"id":37,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:12:38","ip":"185.104.139.135"},{"id":36,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:11:50","ip":"129.65.145.100"},{"id":35,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:03:24","ip":"142.111.99.161"},{"id":34,"event":"page_view","action":null,"url":"https://zihoffman7.github.io/wealth-app-landing/","created_at":"2026-05-21 20:03:05","ip":"129.65.145.194"}];
+
+const geo = {"174.239.181.190":{city:"San Jose",lat:37.3512,lon:-121.8846},"71.93.36.70":{city:"San Luis Obispo",lat:35.2612,lon:-120.655},"129.65.145.229":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"129.65.145.194":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"129.65.145.66":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"174.227.172.57":{city:"Oakland",lat:37.7428,lon:-122.1745},"104.34.6.235":{city:"Costa Mesa",lat:33.6433,lon:-117.9166},"129.65.145.50":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"129.65.145.24":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"146.75.146.74":{city:"Huntington Beach",lat:33.675,lon:-118.0027},"146.75.146.75":{city:"Huntington Beach",lat:33.675,lon:-118.0027},"174.221.160.139":{city:"Riverside",lat:33.9388,lon:-117.416},"174.249.148.248":{city:"San Francisco",lat:37.7695,lon:-122.385},"129.65.145.100":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"129.65.145.206":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"174.255.218.61":{city:"Boronda",lat:36.6988,lon:-121.675},"172.226.186.63":{city:"Anaheim",lat:33.8375,lon:-117.9123},"70.167.159.212":{city:"Irvine",lat:33.7074,lon:-117.7054},"174.194.200.246":{city:"Hayward",lat:37.6403,lon:-122.0667},"129.65.145.61":{city:"San Luis Obispo",lat:35.2865,lon:-120.6822},"185.104.139.135":{city:"Brooklyn",lat:40.6462,lon:-73.9559},"142.111.99.161":{city:"San Francisco",lat:37.7794,lon:-122.4176}};
+
+// Stats
+const views = events.filter(e=>e.event==='page_view').length;
+const clicks = events.filter(e=>e.event==='click').length;
+const signups = events.filter(e=>e.action==='email_signup').length;
+const subnet = ip => ip.split('.').slice(0,3).join('.');
+const uniqueIPs = new Set(events.map(e=>e.ip)).size;
+document.getElementById('s-total').textContent = events.length;
+document.getElementById('s-views').textContent = views;
+document.getElementById('s-clicks').textContent = clicks;
+document.getElementById('s-ips').textContent = uniqueIPs;
+document.getElementById('s-signups').textContent = signups;
+
+// Map — group by /24 subnet
+const map = L.map('map').setView([37, -100], 4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:''}).addTo(map);
+
+const netCount = {}, netGeo = {}, netIPs = {};
+events.forEach(e => {
+  const s = subnet(e.ip);
+  netCount[s] = (netCount[s]||0) + 1;
+  netGeo[s] = geo[e.ip];
+  netIPs[s] = netIPs[s] ? netIPs[s]+', '+e.ip : e.ip;
+});
+// deduplicate netIPs display
+Object.keys(netIPs).forEach(s => netIPs[s] = [...new Set(netIPs[s].split(', '))].join(', '));
+
+const cityOffset = {};
+Object.entries(netGeo).forEach(([s, g]) => {
+  if (!g) return;
+  cityOffset[g.city] = (cityOffset[g.city]||0) + 1;
+  const jitter = (cityOffset[g.city]-1) * 0.02;
+  L.circleMarker([g.lat + jitter, g.lon + jitter], {
+    radius: Math.min(6 + netCount[s] * 0.8, 24),
+    fillColor: '#7c3aed', color: '#a78bfa', weight: 1.5, fillOpacity: 0.75
+  }).bindPopup(`<b>${g.city}</b><br><span style="font-size:0.85em;color:#aaa">${s}.0/24</span><br>${netCount[s]} events`).addTo(map);
+});
+
+const C = (id, type, labels, data, colors) => new Chart(document.getElementById(id), {
+  type, data: { labels, datasets:[{ data, backgroundColor: colors, borderColor: colors, borderWidth: type==='bar'?0:2, tension:.4, fill: type==='line' }] },
+  options: { plugins:{legend:{display:type==='doughnut',labels:{color:'#94a3b8',boxWidth:12}}}, scales: type!=='doughnut'?{x:{ticks:{color:'#64748b'},grid:{color:'#1e2130'}},y:{ticks:{color:'#64748b'},grid:{color:'#2d3148'}}}:{}, responsive:true, maintainAspectRatio:true }
+});
+
+// Events by type
+C('c-events','doughnut',['Page View','Click'],[views,clicks],['#7c3aed','#06b6d4']);
+
+// Click actions
+const actions = {};
+events.filter(e=>e.action).forEach(e=>actions[e.action]=(actions[e.action]||0)+1);
+const aLabels = Object.keys(actions).map(k=>k.replace(/_/g,' '));
+C('c-actions','bar',aLabels,Object.values(actions),['#7c3aed','#06b6d4','#10b981','#f59e0b']);
+
+// Events over time (by date)
+const byDate = {};
+events.forEach(e=>{ const d=e.created_at.slice(0,10); byDate[d]=(byDate[d]||0)+1; });
+const dates = Object.keys(byDate).sort();
+C('c-time','line',dates,dates.map(d=>byDate[d]),'#7c3aed');
+
+// Events by city (subnet-grouped)
+const byCity = {};
+Object.entries(netGeo).forEach(([s, g]) => { if(g) byCity[g.city] = (byCity[g.city]||0) + netCount[s]; });
+const cities = Object.entries(byCity).sort((a,b)=>b[1]-a[1]);
+C('c-city','bar',cities.map(c=>c[0]),cities.map(c=>c[1]),['#7c3aed','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#a78bfa']);
+</script>
+</body>
+</html>
